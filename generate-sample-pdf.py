@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from PyPDF2 import PdfFileWriter, PdfFileReader
 import io
 from os import listdir
 from os.path import dirname, join
+from PyPDF2 import PdfFileWriter, PdfFileReader
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfbase.pdfmetrics import stringWidth
@@ -18,8 +18,6 @@ def generate_pdf_from_template_with_text(render_text="Some Name",
                                          footer_size=12):
     template_dir = join(dirname(__file__), 'template')
     for template_name in listdir(template_dir):
-        print(template_name)
-
         pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
         text_width = stringWidth(render_text, 'Arial', 32)
         existing_pdf = PdfFileReader(open(join(template_dir, template_name), "rb"))
@@ -45,9 +43,11 @@ def generate_pdf_from_template_with_text(render_text="Some Name",
         page.mergePage(new_pdf.getPage(0))
         output.addPage(page)
         # finally, write "output" to a real file
-        outputStream = open(join("output", f"{template_name.split('.')[0]}_{render_text.replace(' ','_')}.pdf"), "wb")
-        output.write(outputStream)
-        outputStream.close()
+        output_file_name = f"{template_name.split('.')[0]}_{render_text.replace(' ','_')}.pdf"
+        print(output_file_name)
+        output_stream = open(join("output", output_file_name), "wb")
+        output.write(output_stream)
+        output_stream.close()
 
 if __name__ == '__main__':
     with open('names.txt', 'r', encoding='utf-8') as names_file:

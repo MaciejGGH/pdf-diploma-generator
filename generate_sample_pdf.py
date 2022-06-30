@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+"""
+    Module to generate a PDF file from a template PDF file with a text and footer inserted.
+"""
 import io
 from os import listdir
 from os.path import dirname, join
+from datetime import datetime
 from PyPDF2 import PdfFileWriter, PdfFileReader
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import landscape, A4
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from datetime import datetime
 
 
 def generate_pdf_from_template_with_text(pdf_template_path='./template/template.pdf',
@@ -21,7 +23,8 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
                                          add_footer=False,
                                          add_date_to_footer=False,
                                          footer_vertical_position=15,
-                                         footer_horizontal_position='left',
+                                         footer_horizontal_alignment='exact',
+                                         footer_horizontal_position_value=280,
                                          footer_text="Poznań",
                                          footer_font_size=12,
                                          footer_date=datetime.now().strftime("%Y.%m.%d")):
@@ -34,20 +37,23 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
     :param add_footer: boolean flag to add a footer to the PDF file
     :param add_date_to_footer: boolean flag to add a date to the footer
     :param footer_vertical_position: vertical position of the footer
-    :param footer_horizontal_position: horizontal position of the footer, allowed values: 'left', 'center', 'right'
+    :param footer_horizontal_alignment: horizontal position of the footer,
+        allowed values: 'left', 'center', 'right', 'exact'
+    :param footer_horizontal_position_value: horizontal position
+        of the footer to be used when footer_horizontal_alignment is 'exact'
     :param footer_text: text to insert into the footer
     :param footer_font_size: font size of the text to insert into the footer
     :param footer_date: date to insert into the footer
     :return:
     """
-    valid = {'left', 'center', 'right'}
-    if footer_horizontal_position not in valid:
-        raise ValueError("footer_horizontal_position must be one of %r." % valid)
+    valid = {'left', 'center', 'right', 'exact'}
+    if footer_horizontal_alignment not in valid:
+        raise ValueError(f"footer_horizontal_position must be one of ({valid}).")
 
     pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
     text_width = stringWidth(text_to_insert, 'Arial', font_size)
 
-    # read your existing PDF    
+    # read your existing PDF
     existing_pdf = PdfFileReader(open(pdf_template_path, "rb"))
     page = existing_pdf.getPage(0)
 
@@ -57,7 +63,9 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
     # print(can.getAvailableFonts())
     overlay_canvas.setFont('Arial', font_size)
     overlay_canvas.setFontSize(font_size)
-    overlay_canvas.drawString((float(page.mediaBox.width) - text_width) / 2, text_vertical_position, text_to_insert)
+    overlay_canvas.drawString((float(page.mediaBox.width) - text_width) / 2,
+                              text_vertical_position,
+                              text_to_insert)
     overlay_canvas.save()
     #move to the beginning of the StringIO buffer
     overlay_packet.seek(0)
@@ -73,13 +81,15 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
         # print(can.getAvailableFonts())
         footer_canvas.setFont('Arial', footer_font_size)
         footer_canvas.setFontSize(footer_font_size)
-        if footer_horizontal_position == 'left':
+        if footer_horizontal_alignment == 'left':
             footer_horizontal_position_value = 25
-        elif footer_horizontal_position == 'center':
+        elif footer_horizontal_alignment == 'center':
             footer_horizontal_position_value = (float(page.mediaBox.width) - footer_text_width) / 2
-        elif footer_horizontal_position == 'right':
+        elif footer_horizontal_alignment == 'right':
             footer_horizontal_position_value = float(page.mediaBox.width) - footer_text_width - 25
-        footer_canvas.drawString(footer_horizontal_position_value , footer_vertical_position, footer_text)
+        footer_canvas.drawString(footer_horizontal_position_value,
+                                 footer_vertical_position,
+                                 footer_text)
         footer_canvas.save()
         #move to the beginning of the StringIO buffer
         footer_packet.seek(0)
@@ -108,9 +118,13 @@ if __name__ == '__main__':
                     pdf_template_path=join(template_dir, template_name),
                     text_to_insert=name,
                     text_vertical_position=275,
-                    output_pdf_path=join("output", f"{template_name.split('.')[0]}_{name}.pdf".replace(' ','_')),
+                    output_pdf_path=join("output",
+                                        f"{template_name.split('.')[0]}_{name}.pdf".replace(' ','_')
+                                        ),
                     font_size=32,
-                    footer_horizontal_position='right',
+                    footer_horizontal_alignment='exact',
+                    footer_horizontal_position_value=550,
+                    footer_vertical_position=155,
                     add_footer=True,
                     add_date_to_footer=True,
                     footer_text="Poznań",

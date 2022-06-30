@@ -6,7 +6,7 @@ from os import listdir
 from os.path import dirname, join
 from PyPDF2 import PdfFileWriter, PdfFileReader
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import landscape, A4
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -15,9 +15,13 @@ from datetime import datetime
 
 def generate_pdf_from_template_with_text(pdf_template_path='./template/template.pdf',
                                          text_to_insert="Some Name",
+                                         text_vertical_position=280,
                                          output_pdf_path='./output/output.pdf',
                                          font_size=32,
-                                         add_footer=True,
+                                         add_footer=False,
+                                         add_date_to_footer=False,
+                                         footer_vertical_position=15,
+                                         footer_horizontal_position=15,
                                          footer_text="Poznań",
                                          footer_font_size=12,
                                          footer_date=datetime.now().strftime("%Y.%m.%d")):
@@ -33,30 +37,49 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
     :param footer_date: date to insert into the footer
     :return:
     """
-    
+
     pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
-    text_width = stringWidth(text_to_insert, 'Arial', 32)
+    text_width = stringWidth(text_to_insert, 'Arial', font_size)
+
+    # read your existing PDF    
     existing_pdf = PdfFileReader(open(pdf_template_path, "rb"))
     page = existing_pdf.getPage(0)
 
-    packet = io.BytesIO()
-    # create a new PDF with Reportlab
-    can = canvas.Canvas(packet, pagesize=letter)
+    # create a new PDF with overlay text with Reportlab
+    overlay_packet = io.BytesIO()
+    overlay_canvas = canvas.Canvas(overlay_packet, pagesize=landscape(A4))
     # print(can.getAvailableFonts())
-    can.setFont('Arial', font_size)
-    can.setFontSize(font_size)
-    can.drawString((float(page.mediaBox.width) - text_width) / 2, 280, text_to_insert)
-    can.save()
-
-
+    overlay_canvas.setFont('Arial', font_size)
+    overlay_canvas.setFontSize(font_size)
+    overlay_canvas.drawString((float(page.mediaBox.width) - text_width) / 2, text_vertical_position, text_to_insert)
+    overlay_canvas.save()
     #move to the beginning of the StringIO buffer
-    packet.seek(0)
-    new_pdf = PdfFileReader(packet)
-    # read your existing PDF
+    overlay_packet.seek(0)
+    overlay_pdf = PdfFileReader(overlay_packet)
+
+    if add_footer:
+        if add_date_to_footer:
+            footer_text = footer_text + ", " + footer_date
+        footer_text_width = stringWidth(footer_text, 'Arial', footer_font_size)
+        # create a new PDF with footer text with Reportlab
+        footer_packet = io.BytesIO()
+        footer_canvas = canvas.Canvas(footer_packet, pagesize=landscape(A4))
+        # print(can.getAvailableFonts())
+        footer_canvas.setFont('Arial', footer_font_size)
+        footer_canvas.setFontSize(footer_font_size)
+        footer_canvas.drawString((float(page.mediaBox.width) - footer_text_width - 25) , footer_vertical_position, footer_text)
+        footer_canvas.save()
+        #move to the beginning of the StringIO buffer
+        footer_packet.seek(0)
+        footer_pdf = PdfFileReader(footer_packet)
+
 
     output = PdfFileWriter()
     # add the "watermark" (which is the new pdf) on the existing page
-    page.mergePage(new_pdf.getPage(0))
+    page.mergePage(overlay_pdf.getPage(0))
+    if add_footer:
+        # add the footer pdf on the existing page
+        page.mergePage(footer_pdf.getPage(0))
     output.addPage(page)
     # finally, write "output" to a real file
     output_stream = open(output_pdf_path, "wb")
@@ -72,9 +95,12 @@ if __name__ == '__main__':
                 generate_pdf_from_template_with_text(
                     pdf_template_path=join(template_dir, template_name),
                     text_to_insert=name,
+                    text_vertical_position=275,
                     output_pdf_path=join("output", f"{template_name.split('.')[0]}_{name}.pdf".replace(' ','_')),
                     font_size=32,
+                    footer_horizontal_position=600,
                     add_footer=True,
+                    add_date_to_footer=True,
                     footer_text="Poznań",
                     footer_font_size=12,
                     footer_date=datetime.now().strftime("%Y.%m.%d")

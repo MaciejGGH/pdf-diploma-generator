@@ -21,7 +21,7 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
                                          add_footer=False,
                                          add_date_to_footer=False,
                                          footer_vertical_position=15,
-                                         footer_horizontal_position=15,
+                                         footer_horizontal_position='left',
                                          footer_text="Poznań",
                                          footer_font_size=12,
                                          footer_date=datetime.now().strftime("%Y.%m.%d")):
@@ -32,11 +32,17 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
     :param output_pdf_path: path to the output PDF file
     :param font_size: font size of the text to insert
     :param add_footer: boolean flag to add a footer to the PDF file
+    :param add_date_to_footer: boolean flag to add a date to the footer
+    :param footer_vertical_position: vertical position of the footer
+    :param footer_horizontal_position: horizontal position of the footer, allowed values: 'left', 'center', 'right'
     :param footer_text: text to insert into the footer
     :param footer_font_size: font size of the text to insert into the footer
     :param footer_date: date to insert into the footer
     :return:
     """
+    valid = {'left', 'center', 'right'}
+    if footer_horizontal_position not in valid:
+        raise ValueError("footer_horizontal_position must be one of %r." % valid)
 
     pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
     text_width = stringWidth(text_to_insert, 'Arial', font_size)
@@ -67,7 +73,13 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
         # print(can.getAvailableFonts())
         footer_canvas.setFont('Arial', footer_font_size)
         footer_canvas.setFontSize(footer_font_size)
-        footer_canvas.drawString((float(page.mediaBox.width) - footer_text_width - 25) , footer_vertical_position, footer_text)
+        if footer_horizontal_position == 'left':
+            footer_horizontal_position_value = 25
+        elif footer_horizontal_position == 'center':
+            footer_horizontal_position_value = (float(page.mediaBox.width) - footer_text_width) / 2
+        elif footer_horizontal_position == 'right':
+            footer_horizontal_position_value = float(page.mediaBox.width) - footer_text_width - 25
+        footer_canvas.drawString(footer_horizontal_position_value , footer_vertical_position, footer_text)
         footer_canvas.save()
         #move to the beginning of the StringIO buffer
         footer_packet.seek(0)
@@ -98,7 +110,7 @@ if __name__ == '__main__':
                     text_vertical_position=275,
                     output_pdf_path=join("output", f"{template_name.split('.')[0]}_{name}.pdf".replace(' ','_')),
                     font_size=32,
-                    footer_horizontal_position=600,
+                    footer_horizontal_position='right',
                     add_footer=True,
                     add_date_to_footer=True,
                     footer_text="Poznań",

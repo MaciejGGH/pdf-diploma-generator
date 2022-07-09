@@ -3,6 +3,7 @@
 """
     Module to generate a PDF file from a template PDF file with a text and footer inserted.
 """
+import configparser
 import io
 from os import listdir
 from os.path import dirname, join
@@ -25,7 +26,7 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
                                          footer_vertical_position=15,
                                          footer_horizontal_alignment='exact',
                                          footer_horizontal_position_value=280,
-                                         footer_text="Poznań",
+                                         footer_text="City",
                                          footer_font_size=12,
                                          footer_date=datetime.now().strftime("%Y.%m.%d")):
     """
@@ -110,24 +111,28 @@ def generate_pdf_from_template_with_text(pdf_template_path='./template/template.
 
 if __name__ == '__main__':
     template_dir = join(dirname(__file__), 'template')
-
+    run_date=datetime.now().strftime("%Y%m%d")
     with open('names.txt', 'r', encoding='utf-8') as names_file:
+        template_config = configparser.ConfigParser()
+        template_config.read('config.ini', encoding='utf-8')
         for name in names_file.read().split('\n'):
             for template_name in listdir(template_dir):
+                if template_name not in template_config:
+                    raise ValueError(f"Template {template_name} is not configured in config.ini")
                 generate_pdf_from_template_with_text(
                     pdf_template_path=join(template_dir, template_name),
                     text_to_insert=name,
-                    text_vertical_position=275,
+                    text_vertical_position=float(template_config[template_name]['text_vertical_position']),
                     output_pdf_path=join("output",
-                                        f"{template_name.split('.')[0]}_{name}.pdf".replace(' ','_')
-                                        ),
-                    font_size=32,
-                    footer_horizontal_alignment='exact',
-                    footer_horizontal_position_value=550,
-                    footer_vertical_position=155,
-                    add_footer=True,
-                    add_date_to_footer=True,
-                    footer_text="Poznań",
-                    footer_font_size=12,
-                    footer_date=datetime.now().strftime("%Y.%m.%d")
+                        f"{run_date}_{template_name.split('.')[0]}_{name}.pdf".replace(' ','_')
+                        ),
+                    font_size=float(template_config[template_name]['font_size']),
+                    footer_horizontal_alignment=template_config[template_name]['footer_horizontal_alignment'],
+                    footer_horizontal_position_value=float(template_config[template_name]['footer_horizontal_position_value']),
+                    footer_vertical_position=float(template_config[template_name]['footer_vertical_position']),
+                    add_footer=template_config[template_name]['add_footer'],
+                    add_date_to_footer=template_config[template_name]['add_date_to_footer'],
+                    footer_text=template_config[template_name]['footer_text'],
+                    footer_font_size=float(template_config[template_name]['footer_font_size']),
+                    footer_date=template_config[template_name]['footer_date']
                 )

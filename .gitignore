@@ -3,3 +3,5 @@
 output/*.*
 names.txt
 template/*.*
+template_library/*.*
+!template/template.pdf

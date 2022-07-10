@@ -1,0 +1,36 @@
+= PDF diploma generator
+
+Generate diploma in pdf format for list of people from a single template.
+
+== Installation
+
+    pip install -r requirements.txt
+    
+== Configuration
+
+Create a diploma (or any other) pdf template in `.\template` folder. Great ones can be found and created using https://www.canva.com/templates/[Canva templates].
+
+Edit `config.ini` and create a section for every template file name you intend to use, like:
+
+    [my-first-diploma.pdf]
+    text_vertical_position=275
+    font_size=32
+    footer_horizontal_alignment=center
+    footer_horizontal_position_value=550
+    footer_vertical_position=35
+    add_footer=True
+    add_date_to_footer=True
+    footer_text=MyCity
+    footer_font_size=12
+    footer_date=09.07.2022
+
+Make sure the template file name can be found in `config.ini`. Use as many templates as you need.
+
+Edit `names.txt` file and put all the names for which you want the diplomas created.
+
+== Use
+
+Run the below command to get the generated files created in the `./output` folder. There will be one file created for every name found in `names.txt` for every template found.
+
+    python.exe .\generate_sample_pdf.py
+
